@@ -1,4 +1,4 @@
-const CACHE_NAME = 'room-layout-cache-v1';
+const CACHE_NAME = 'room-planner-cache-v1';
 const urlsToCache = [
     './',
     './index.html',
