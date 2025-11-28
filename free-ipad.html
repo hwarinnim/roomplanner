@@ -835,13 +835,12 @@
         }
 
         function exportToHtml() {
-            // 🔒 Lock in current positions first
+            // Lock in positions visually
             Object.values(furnitureMap).forEach(el => {
                 el.style.left = el.offsetLeft + 'px';
                 el.style.top = el.offsetTop + 'px';
             });
 
-            // 🔄 Rebuild the current layout fresh from DOM
             const state = {
                 roomWidth: roomWidthCm,
                 roomHeight: roomHeightCm,
@@ -849,8 +848,8 @@
                     id: el.dataset.id,
                     type: el.dataset.type,
                     name: el.dataset.name,
-                    width: parseInt(el.dataset.width),
-                    height: parseInt(el.dataset.height),
+                    width: parseFloat(el.style.width),
+                    height: parseFloat(el.style.height),
                     color: el.style.backgroundColor,
                     x: parseFloat(el.style.left),
                     y: parseFloat(el.style.top),
@@ -858,16 +857,22 @@
                 }))
             };
 
-            // 🧠 Replace the resetRoom() onload with loadState using saved layout
-            const html = document.documentElement.outerHTML.replace(
-                /window\.onload = \(\) => {\s*resetRoom\(\);\s*fitToCanvas\(\);\s*}/,
-                `window.onload = () => {
-    loadState(${JSON.stringify(state)});
-  }`
-            );
+            // Clone current document
+            const clone = document.documentElement.cloneNode(true);
+            const script = clone.querySelector('script');
 
-            // 📦 Download the file
-            const blob = new Blob([html], { type: 'text/html' });
+            // Create a new script tag with the saved layout
+            const saved = document.createElement('script');
+            saved.textContent = `const savedLayout = ${JSON.stringify(state)};\nwindow.onload = () => { loadState(savedLayout); };`;
+
+            // Inject right after the original script
+            script.parentNode.insertBefore(saved, script.nextSibling);
+
+            // Build final HTML
+            const finalHtml = '<!DOCTYPE html>\n' + clone.outerHTML;
+
+            // Download
+            const blob = new Blob([finalHtml], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -881,8 +886,13 @@
 
 
         window.onload = () => {
-            resetRoom();
-            fitToCanvas();
+            if (typeof savedLayout !== 'undefined') {
+                loadState(savedLayout);
+
+            } else {
+                resetRoom();
+                fitToCanvas();
+            }
         }
 
         document.addEventListener('click', (e) => {
