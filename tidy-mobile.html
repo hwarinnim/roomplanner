@@ -661,7 +661,7 @@
             addToSidebar(el);
 
 
-            saveHistory();
+            
             return el;
 
 
@@ -1093,7 +1093,7 @@
                 document.addEventListener('touchend', stopTouch, { passive: false });
             };
 
-            saveHistory();
+            
 
 
         }
@@ -1414,6 +1414,18 @@ const switchBtn = document.querySelector('.mode-switch-btn');
             const sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('show');
         }
+
+
+
+        // Disable double-tap to zoom on buttons and other fast taps
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = new Date().getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
 
 
 
