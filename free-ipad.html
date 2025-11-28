@@ -984,14 +984,21 @@
 
 
         // Disable double-tap to zoom on buttons
-        let lastTouchEnd = 0;
+        let tapTimeout;
+        let tapCount = 0;
+
         document.addEventListener('touchend', function (event) {
-           const now = new Date().getTime();
-           if (now - lastTouchEnd <= 300) {
-              event.preventDefault();
-           }
-          lastTouchEnd = now;
-        }, false);
+          tapCount++;
+
+          clearTimeout(tapTimeout);
+          tapTimeout = setTimeout(() => {
+            tapCount = 0;
+          }, 500); // 500ms window for detecting double-tap
+
+          if (tapCount > 1) {
+            event.preventDefault();
+          }
+        }, { passive: false });
 
 
 
