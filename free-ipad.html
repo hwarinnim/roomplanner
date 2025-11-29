@@ -780,22 +780,67 @@
                     let newLeft = mouseX - offsetX / zoomLevel;
                     let newTop = mouseY - offsetY / zoomLevel;
 
+                    const angle = (parseFloat(el.dataset.rotation) || 0) * Math.PI / 180;
                     const w = el.offsetWidth;
                     const h = el.offsetHeight;
+                    const cx = newLeft + w / 2;
+                    const cy = newTop + h / 2;
 
-                    // Clamp to room bounds
-                    const minLeft = 0;
-                    const minTop = 0;
-                    const maxLeft = roomWidthCm - w - 4;
-                    const maxTop = roomHeightCm - h - 4;
+                    let minX, maxX, minY, maxY;
+                    const isOval = el.dataset.type === 'circle' && w !== h && angle !== 0;
+                
+                    if (isOval) {
+                        const rx = w / 2;
+                        const ry = h / 2;
+                        const cos = Math.cos(angle);
+                        const sin = Math.sin(angle);
+                
+                        const aabbW = 2 * Math.sqrt((rx * cos) ** 2 + (ry * sin) ** 2);
+                        const aabbH = 2 * Math.sqrt((rx * sin) ** 2 + (ry * cos) ** 2);
+                
+                        minX = cx - aabbW / 2;
+                        maxX = cx + aabbW / 2;
+                        minY = cy - aabbH / 2;
+                        maxY = cy + aabbH / 2;
+                    } else {
+                        const corners = [
+                            [-w / 2, -h / 2],
+                            [w / 2, -h / 2],
+                            [w / 2, h / 2],
+                            [-w / 2, h / 2]
+                        ].map(([x, y]) => {
+                            const rx = x * Math.cos(angle) - y * Math.sin(angle);
+                            const ry = x * Math.sin(angle) + y * Math.cos(angle);
+                            return [cx + rx, cy + ry];
+                        });
 
-                    newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
-                    newTop = Math.max(minTop, Math.min(newTop, maxTop));
+                        const xs = corners.map(c => c[0]);
+                        const ys = corners.map(c => c[1]);
+                
+                        minX = Math.min(...xs);
+                        maxX = Math.max(...xs);
+                        minY = Math.min(...ys);
+                        maxY = Math.max(...ys);
+                    }
+                
+                    const buffer = 4;
+                    let dx = 0, dy = 0;
+                
+                    if (minX < 0) dx = -minX;
+                    if (maxX > roomWidthCm - buffer) dx = (roomWidthCm - buffer) - maxX;
+                    if (minY < 0) dy = -minY;
+                    if (maxY > roomHeightCm - buffer) dy = (roomHeightCm - buffer) - maxY;
 
-                    el.style.left = newLeft + 'px';
-                    el.style.top = newTop + 'px';
+                    const finalCx = cx + dx;
+                    const finalCy = cy + dy;
+                    const finalLeft = finalCx - w / 2;
+                    const finalTop = finalCy - h / 2;
+                
+                    el.style.left = finalLeft + 'px';
+                    el.style.top = finalTop + 'px';
                     el.style.transform = `rotate(${el.dataset.rotation}deg)`;
                 }
+
 
                 function stopTouch() {
                     document.removeEventListener('touchmove', moveAt);
