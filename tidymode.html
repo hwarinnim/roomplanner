@@ -671,11 +671,11 @@
 
                 function moveAt(e) {
                     const roomRect = room.getBoundingClientRect();
-                    const mouseX = (e.clientX - roomRect.left) / zoomLevel;
-                    const mouseY = (e.clientY - roomRect.top) / zoomLevel;
+                    const mouseX = (e.clientX - roomRect.left);
+                    const mouseY = (e.clientY - roomRect.top);
 
-                    let newLeft = mouseX - offsetX / zoomLevel;
-                    let newTop = mouseY - offsetY / zoomLevel;
+                    let newLeft = mouseX - offsetX;
+                    let newTop = mouseY - offsetY;
 
                     const w = el.offsetWidth;
                     const h = el.offsetHeight;
