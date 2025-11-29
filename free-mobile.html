@@ -662,6 +662,8 @@
             el.style.transform = `rotate(0deg)`;
             el.style.borderRadius = type === 'circle' ? '50%' : '0';
             el.textContent = label;
+            el.style.fontSize = '14px'; // default
+            el.dataset.fontSize = '14';
             el.dataset.color = color;
             el.style.backgroundColor = color || getRandomColor();
             // Always place new items above everything else
@@ -751,6 +753,41 @@
                 el.textContent = nameInput.value;
             });
 
+            // Font Size input (on its own line, below name input)
+            let fontWrap = document.createElement('div');
+            fontWrap.style.display = 'flex';
+            fontWrap.style.alignItems = 'center';
+            fontWrap.style.gap = '4px';
+            fontWrap.style.marginTop = '4px';
+
+            let fontSizeInput = document.createElement('input');
+            fontSizeInput.type = 'number';
+            fontSizeInput.placeholder = 'Font size';
+            fontSizeInput.value = el.dataset.fontSize || '14';
+            fontSizeInput.min = 7;
+            fontSizeInput.max = 49;
+
+            fontSizeInput.style.flex = '1';
+            fontSizeInput.style.padding = '4px';
+            fontSizeInput.style.fontSize = '13px';
+            fontSizeInput.style.fontFamily = "'Oxygen Mono', monospace";
+            fontSizeInput.style.border = '1px solid #ccc';
+            fontSizeInput.style.borderRadius = '4px';
+
+            fontSizeInput.addEventListener('input', () => {
+                let size = Math.max(7, Math.min(49, parseInt(fontSizeInput.value)));
+                el.dataset.fontSize = size;
+                el.style.fontSize = size + 'px';
+            });
+
+            let fontUnit = document.createElement('span');
+            fontUnit.className = 'unit-text';
+            fontUnit.textContent = 'px';
+
+            fontWrap.appendChild(fontSizeInput);
+            fontWrap.appendChild(fontUnit);
+            entry.appendChild(fontWrap);
+
             let dimensionRow = document.createElement('div');
             dimensionRow.className = 'dimension-row';
 
@@ -835,12 +872,13 @@
             rotateWrap.appendChild(rotateUnit);
 
 
-            entry.appendChild(rotateWrap);
+            entry.appendChild(rotateWrap);    // ⬅️ Then rotation
+            entry.appendChild(nameInput);     // ⬅️ Name first
+            entry.appendChild(fontWrap);      // ⬅️ Font size right after
+            entry.appendChild(dimensionRow);  // ⬅️ Then width/height
+            entry.appendChild(colorGrid);     // ⬅️ Then colors
 
-
-            entry.appendChild(nameInput);
-            entry.appendChild(dimensionRow);
-            entry.appendChild(colorGrid);
+            
             itemList.appendChild(entry);
             updateZIndices();
             saveHistory();
@@ -1046,6 +1084,7 @@
                     id: el.dataset.id,
                     type: el.dataset.type,
                     name: el.dataset.name,
+                    fontSize: parseFloat(el.dataset.fontSize || 14),
                     width: parseInt(el.dataset.width),
                     height: parseInt(el.dataset.height),
                     color: el.style.backgroundColor,
@@ -1084,6 +1123,9 @@
                 newEl.dataset.rotation = item.rotation;
                 newEl.style.transform = `rotate(${item.rotation}deg)`;
 
+                const fontSize = item.fontSize || 14;
+                newEl.dataset.fontSize = fontSize;
+                newEl.style.fontSize = fontSize + 'px';
 
 
             });
@@ -1121,6 +1163,7 @@
                     id: el.dataset.id,
                     type: el.dataset.type,
                     name: el.dataset.name,
+                    fontSize: parseFloat(el.dataset.fontSize || 14),
                     width: parseFloat(el.style.width),
                     height: parseFloat(el.style.height),
                     color: el.style.backgroundColor,
