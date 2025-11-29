@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Oxygen+Mono&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Room Planner</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Oxygen Mono', serif;
+            background-color: #036d80;
+            /* teal */
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            color: #fff;
+        }
+
+        .sidebar {
+            width: 250px;
+            font-family: 'Oxygen Mono', serif;
+            background-color: #437436;
+            /* forest green */
+            padding: 20px;
+            border-right: 2px solid #e2b54e;
+            overflow-y: auto;
+            align-items: center;
+            text-align: center;
+        }
+
+        .sidebar h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #fffbe7;
+            align-items: center;
+            text-align: center;
+        }
+
+        .item-entry {
+            background: #ffffff;
+            font-family: 'Oxygen Mono', serif;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 8px;
+            font-size: 14px;
+            cursor: move;
+            position: relative;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+
+        .item-entry.selected {
+            border: 2px solid #ee9217;
+            background-color: #ffe8c9;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #c65818;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 18px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .item-entry input {
+            font-size: 13px;
+            font-family: 'Oxygen Mono', serif;
+            padding: 4px;
+            width: 100%;
+            margin-bottom: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .dimension-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .dimension-row input {
+            font-family: 'Oxygen Mono', serif;
+            width: 50%;
+            margin-bottom: 0;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            border: 2px solid #999;
+            border-radius: 4px;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .room-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .room-controls input {
+            width: 100px;
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-family: 'Oxygen Mono', serif;
+        }
+
+        .room-controls button,
+        .palette button {
+            background-color: #ee9217;
+            font-family: 'Oxygen Mono', serif;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .room-controls button:hover,
+        .palette button:hover {
+            background-color: #c65818;
+        }
+
+        #roomWrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 60vh;
+            overflow: hidden;
+            background-color: #fff;
+            background-image:
+                linear-gradient(to right, rgba(0, 0, 0, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 2px solid #e2b54e;
+            border-radius: 8px;
+        }
+
+        #room {
+            transform-origin: center center;
+            position: relative;
+            background-color: #fff;
+            border: 2px dashed #036d80;
+            z-index: 10000;
+        }
+
+        .furniture {
+            position: absolute;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            background-color: #a0c4ff;
+            border: 0px solid #fff;
+            user-select: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .spacer-left {
+            margin-left: 25px;
+        }
+
+        .palette {
+            margin-top: 20px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .input-row input {
+            flex: 1;
+            padding: 4px;
+            font-size: 13px;
+            font-family: 'Oxygen Mono', serif;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .unit-text {
+            font-size: 12px;
+            color: #333;
+        }
+
+        .rotate-row .unit-text {
+            font-size: 12px;
+            color: #333;
+            position: relative;
+            top: -4px;
+        }
+
+
+        .room-input {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            width: 110px;
+        }
+
+        .room-input input {
+            width: 80px;
+            padding: 4px;
+            font-size: 13px;
+            font-family: 'Oxygen Mono', serif;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .room-unit {
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .rotate-row input {
+            width: 50px;
+        }
+
+        .rotate-row {
+            padding-right: 24px;
+        }
+
+        .furniture.selected {
+            outline: 3px solid #ee9217;
+            outline-offset: 2px;
+            z-index: 9999;
+        }
+
+        #roomContainer {
+            transform-origin: center center;
+            transition: transform 0.1s ease;
+        }
+
+        .title-link {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>Items</h2>
+        <div id="itemList"></div>
+    </div>
+    <div class="main">
+        <h1><a href="index.html" class="title-link">Room Planner</a></h1>
+        <div class="room-controls">
+            <div class="room-input">
+                <input id="roomWidth" type="number" value="600" />
+                <span class="room-unit">cm</span>
+            </div>
+
+            <div class="room-input">
+                <input id="roomHeight" type="number" value="400" />
+                <span class="room-unit">cm</span>
+            </div>
+
+            <button onclick="resizeRoom()">Set Room Size</button>
+            <button onclick="goToOtherMode()" class="spacer-left">Go to Free Mode</button>
+        </div>
+        <div id="roomWrapper">
+            <div id="roomContainer">
+                <div id="room"></div>
+            </div>
+        </div>
+        <div class="palette">
+            <button onclick="undo()">Undo</button>
+            <button onclick="redo()">Redo</button>
+            <button onclick="addFurniture('square')" class="spacer-left">Add Square</button>
+            <button onclick="addFurniture('circle')">Add Circle</button>
+            <button onclick="clearRoom()" class="spacer-left">Clear</button>
+            <button onclick="resetRoom()">Reset</button>
+            <button onclick="exportToHtml()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        let room = document.getElementById('room');
+        let itemList = document.getElementById('itemList');
+        let itemCount = { square: 0, circle: 0 };
+        let furnitureMap = {};
+        let scale = 1;
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+        let roomWidthCm = 600;
+        let roomHeightCm = 400;
+        let history = [];
+        let historyIndex = -1;
+        let isRestoring = false;
+
+
+
+        const colorOptions = [
+            { name: 'Orange', value: '#ee9217' },
+            { name: 'Brick Red', value: '#c65818' },
+            { name: 'Mustard', value: '#e2b54e' },
+            { name: 'Forest Green', value: '#437436' },
+            { name: 'Teal', value: '#036d80' }
+        ];
+
+        function getRandomColor() {
+            return colorOptions[Math.floor(Math.random() * colorOptions.length)].value;
+        }
+
+        function resizeRoom() {
+            roomWidthCm = parseInt(document.getElementById('roomWidth').value);
+            roomHeightCm = parseInt(document.getElementById('roomHeight').value);
+            if (roomWidthCm && roomHeightCm) {
+                scale = 1;
+                room.style.width = roomWidthCm + 'px';
+                room.style.height = roomHeightCm + 'px';
+
+
+                fitToCanvas();
+
+            }
+        }
+
+        function fitToCanvas() {
+            const wrapper = document.getElementById('roomWrapper');
+            const maxWidth = wrapper.clientWidth - 20;
+            const maxHeight = wrapper.clientHeight - 20;
+            const zoomX = maxWidth / roomWidthCm;
+            const zoomY = maxHeight / roomHeightCm;
+            zoomLevel = Math.min(zoomX, zoomY);
+            panX = 0;
+            panY = 0;
+
+            const roomContainer = document.getElementById('roomContainer');
+            roomContainer.style.transform = `scale(${zoomLevel})`;
+
+        }
+
+
+        function addFurniture(type, name = null, width = 80, height = 80, color = null, x = 10, y = 10) {
+            const count = ++itemCount[type];
+            const label = name || `${type.charAt(0).toUpperCase() + type.slice(1)} ${count}`;
+            const id = label + '-' + Date.now();
+
+            let el = document.createElement('div');
+            el.className = 'furniture';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.dataset.type = type;
+            el.dataset.name = label;
+            el.dataset.id = id;
+            el.dataset.width = width;
+            el.dataset.height = height;
+            el.style.width = width + 'px';
+            el.style.height = height + 'px';
+            el.dataset.rotation = 0;
+            el.style.transform = `rotate(0deg)`;
+            el.style.borderRadius = type === 'circle' ? '50%' : '0';
+            el.dataset.shape = type === 'circle' ? 'circle' : 'rect';
+            el.textContent = label;
+            el.dataset.color = color;
+            el.style.backgroundColor = color || getRandomColor();
+            // Always place new items above everything else
+            el.style.zIndex = 5000; // safely below room border's 10000
+            updateZIndices();
+
+
+            furnitureMap[id] = el;
+            makeDraggable(el);
+            el.addEventListener('click', () => highlightSidebarItem(id));
+            room.appendChild(el);
+            addToSidebar(el);
+
+
+            saveHistory();
+            return el;
+
+
+        }
+
+        function clearRoom() {
+            room.innerHTML = '';
+            itemList.innerHTML = '';
+            furnitureMap = {};
+            itemCount = { square: 0, circle: 0 };
+            saveHistory();
+
+        }
+
+        function resetRoom() {
+            clearRoom();
+            resizeRoom();
+            fitToCanvas();
+
+            // Save counter state (both zero after clearRoom)
+            let savedCounts = { ...itemCount };
+
+            // Add starter items WITHOUT counting
+            addFurniture('square', 'Bed', 200, 90, null, 0, 0);
+            addFurniture('square', 'Desk', 120, 75, null, roomWidthCm - 120 - 3, 0);
+            addFurniture('square', 'Closet', 150, 80, null, 0, roomHeightCm - 80 - 3);
+            addFurniture('circle', 'Rug', 200, 200, null, roomWidthCm / 2 - 100, roomHeightCm / 2 - 100);
+
+            // Restore counters so new items begin at 1
+            itemCount = savedCounts;
+
+            saveHistory();
+
+        }
+
+        function deleteItem(el, entry) {
+            room.removeChild(el);
+            itemList.removeChild(entry);
+            delete furnitureMap[el.dataset.id];
+        }
+
+        function updateFurnitureSize(el, w, h) {
+            el.dataset.width = w;
+            el.dataset.height = h;
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            saveHistory();
+
+        }
+
+        function addToSidebar(el) {
+            const id = el.dataset.id;
+            let entry = document.createElement('div');
+            entry.className = 'item-entry';
+            entry.addEventListener('click', () => highlightSidebarItem(id));
+            entry.draggable = true;
+            entry.dataset.id = id;
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = '×';
+            delBtn.onclick = () => deleteItem(el, entry);
+            entry.appendChild(delBtn);
+
+            let nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = el.dataset.name;
+            nameInput.placeholder = 'Item name';
+            nameInput.addEventListener('focus', () => nameInput.select());
+            nameInput.addEventListener('input', () => {
+                el.dataset.name = nameInput.value;
+                el.textContent = nameInput.value;
+            });
+
+            let dimensionRow = document.createElement('div');
+            dimensionRow.className = 'dimension-row';
+
+            // Width container
+            let widthWrap = document.createElement('div');
+            widthWrap.className = 'input-row';
+
+            let widthInput = document.createElement('input');
+            widthInput.type = 'number';
+            widthInput.placeholder = 'W';
+            widthInput.value = el.dataset.width;
+            widthInput.addEventListener('focus', () => widthInput.select());
+            widthInput.addEventListener('input', () => {
+                updateFurnitureSize(el, parseInt(widthInput.value), parseInt(heightInput.value));
+            });
+
+            let widthUnit = document.createElement('span');
+            widthUnit.className = 'unit-text';
+            widthUnit.textContent = 'cm';
+
+            widthWrap.appendChild(widthInput);
+            widthWrap.appendChild(widthUnit);
+
+            // Height container
+            let heightWrap = document.createElement('div');
+            heightWrap.className = 'input-row';
+
+            let heightInput = document.createElement('input');
+            heightInput.type = 'number';
+            heightInput.placeholder = 'H';
+            heightInput.value = el.dataset.height;
+            heightInput.addEventListener('focus', () => heightInput.select());
+            heightInput.addEventListener('input', () => {
+                updateFurnitureSize(el, parseInt(widthInput.value), parseInt(heightInput.value));
+            });
+
+            let heightUnit = document.createElement('span');
+            heightUnit.className = 'unit-text';
+            heightUnit.textContent = 'cm';
+
+            heightWrap.appendChild(heightInput);
+            heightWrap.appendChild(heightUnit);
+
+            // Add both to the row
+            dimensionRow.appendChild(widthWrap);
+            dimensionRow.appendChild(heightWrap);
+
+
+            let colorGrid = document.createElement('div');
+            colorGrid.className = 'color-grid';
+            colorOptions.forEach(opt => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = opt.value;
+                swatch.title = opt.name;
+                swatch.onclick = () => {
+                    el.style.backgroundColor = opt.value;
+                    el.dataset.color = opt.value;
+                };
+                colorGrid.appendChild(swatch);
+            });
+
+            let rotateWrap = document.createElement('div');
+            rotateWrap.className = 'input-row rotate-row';
+
+            let rotateInput = document.createElement('input');
+            rotateInput.type = 'number';
+            rotateInput.placeholder = '°';
+            rotateInput.value = el.dataset.rotation;
+            rotateInput.addEventListener('input', () => {
+                const angle = parseInt(rotateInput.value) || 0;
+                el.dataset.rotation = angle;
+                el.style.transform = `rotate(${angle}deg)`;
+
+                el.style.left = el.offsetLeft + 'px';
+                el.style.top = el.offsetTop + 'px';
+
+                saveHistory();
+            });
+
+            let rotateUnit = document.createElement('span');
+            rotateUnit.className = 'unit-text';
+            rotateUnit.textContent = '°';
+
+            rotateWrap.appendChild(rotateInput);
+            rotateWrap.appendChild(rotateUnit);
+
+
+            entry.appendChild(rotateWrap);
+
+
+            entry.appendChild(nameInput);
+            entry.appendChild(dimensionRow);
+            entry.appendChild(colorGrid);
+            itemList.appendChild(entry);
+            updateZIndices();
+        }
+
+        function highlightSidebarItem(id) {
+            // Deselect all item entries
+            const allEntries = itemList.querySelectorAll('.item-entry');
+            allEntries.forEach(entry => entry.classList.remove('selected'));
+
+            // Deselect all furniture
+            Object.values(furnitureMap).forEach(el => el.classList.remove('selected'));
+
+            // Highlight matching entry
+            const entry = itemList.querySelector(`[data-id='${id}']`);
+            if (entry) {
+                entry.classList.add('selected');
+                entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+
+            // Highlight and (soft) center furniture
+            const el = furnitureMap[id];
+            if (el) {
+                el.classList.add('selected');
+
+                if (zoomLevel > 1) {
+                    const wrapper = document.getElementById('roomWrapper');
+                    const wrapperWidth = wrapper.clientWidth;
+                    const wrapperHeight = wrapper.clientHeight;
+
+                    const elX = parseFloat(el.style.left);
+                    const elY = parseFloat(el.style.top);
+                    const elW = parseFloat(el.dataset.width);
+                    const elH = parseFloat(el.dataset.height);
+
+                    const elCenterX = elX + elW / 2;
+                    const elCenterY = elY + elH / 2;
+
+                    const centerX = wrapperWidth / 2;
+                    const centerY = wrapperHeight / 2;
+
+                    panX = (centerX / zoomLevel) - elCenterX;
+                    panY = (centerY / zoomLevel) - elCenterY;
+
+
+                }
+
+            }
+        }
+
+
+
+        function updateZIndices() {
+            const entries = Array.from(itemList.children);
+
+            // Assign base z-index based on sidebar order
+            entries.forEach((entry, index) => {
+                const id = entry.dataset.id;
+                const el = furnitureMap[id];
+                if (el) el.style.zIndex = 100 + index;
+            });
+        }
+
+        function makeDraggable(el) {
+            el.onmousedown = function (e) {
+                let offsetX = e.clientX - el.getBoundingClientRect().left;
+                let offsetY = e.clientY - el.getBoundingClientRect().top;
+                let lastMouseX = e.clientX;
+                let lastMouseY = e.clientY;
+
+
+                function moveAt(e) {
+                    const roomRect = room.getBoundingClientRect();
+                    const mouseX = (e.clientX - roomRect.left) / zoomLevel;
+                    const mouseY = (e.clientY - roomRect.top) / zoomLevel;
+
+                    let newLeft = mouseX - offsetX / zoomLevel;
+                    let newTop = mouseY - offsetY / zoomLevel;
+
+                    const w = el.offsetWidth;
+                    const h = el.offsetHeight;
+
+                    const cx = newLeft + w / 2;
+                    const cy = newTop + h / 2;
+
+                    const finalLeft = cx - w / 2;
+                    const finalTop = cy - h / 2;
+
+                    const dx = e.clientX - lastMouseX;
+                    const dy = e.clientY - lastMouseY;
+
+                    let allowedLeft = el.offsetLeft;
+                    let allowedTop = el.offsetTop;
+
+                    // Try X-only move
+                    const tryLeftX = cx - w / 2;
+                    let xBlocked = false;
+                    for (let otherId in furnitureMap) {
+                        const other = furnitureMap[otherId];
+                        if (other === el) continue;
+
+                        const testEl = {
+                            style: { left: tryLeftX + 'px', top: el.offsetTop + 'px' },
+                            dataset: el.dataset
+                        };
+                        if (isOverlapping(testEl, other)) {
+                            xBlocked = true;
+                            break;
+                        }
+                    }
+                    if (!xBlocked) allowedLeft = finalLeft;
+
+                    // Try Y-only move
+                    const tryTopY = cy - h / 2;
+                    let yBlocked = false;
+                    for (let otherId in furnitureMap) {
+                        const other = furnitureMap[otherId];
+                        if (other === el) continue;
+
+                        const testEl = {
+                            style: { left: finalLeft + 'px', top: tryTopY + 'px' },
+                            dataset: el.dataset
+                        };
+                        if (isOverlapping(testEl, other)) {
+                            yBlocked = true;
+                            break;
+                        }
+                    }
+                    if (!yBlocked) allowedTop = finalTop;
+
+                    // Room border clamp (preserve as-is)
+                    (() => {
+                        const angle = (parseFloat(el.dataset.rotation) || 0) * Math.PI / 180;
+                        const w = el.offsetWidth;
+                        const h = el.offsetHeight;
+                        const cx = allowedLeft + w / 2;
+                        const cy = allowedTop + h / 2;
+
+                        const corners = [
+                            [-w / 2, -h / 2],
+                            [w / 2, -h / 2],
+                            [w / 2, h / 2],
+                            [-w / 2, h / 2]
+                        ].map(([x, y]) => {
+                            const rx = x * Math.cos(angle) - y * Math.sin(angle);
+                            const ry = x * Math.sin(angle) + y * Math.cos(angle);
+                            return [cx + rx, cy + ry];
+                        });
+
+                        const xs = corners.map(c => c[0]);
+                        const ys = corners.map(c => c[1]);
+
+                        const minX = Math.min(...xs);
+                        const maxX = Math.max(...xs);
+                        const minY = Math.min(...ys);
+                        const maxY = Math.max(...ys);
+
+                        const rightBuffer = 4;
+                        const bottomBuffer = 4;
+
+                        let dx = 0;
+                        let dy = 0;
+
+                        if (minX < 0) dx = -minX;
+                        if (maxX > roomWidthCm - rightBuffer) dx = (roomWidthCm - rightBuffer) - maxX;
+                        if (minY < 0) dy = -minY;
+                        if (maxY > roomHeightCm - bottomBuffer) dy = (roomHeightCm - bottomBuffer) - maxY;
+
+                        const finalCx = cx + dx;
+                        const finalCy = cy + dy;
+
+                        allowedLeft = finalCx - w / 2;
+                        allowedTop = finalCy - h / 2;
+                    })();
+
+                    el.style.left = allowedLeft + 'px';
+                    el.style.top = allowedTop + 'px';
+                    el.style.transform = `rotate(${el.dataset.rotation}deg)`;
+
+
+                    // Update last mouse
+                    lastMouseX = e.clientX;
+                    lastMouseY = e.clientY;
+                }
+
+
+                function stopDrag() {
+                    document.removeEventListener('mousemove', moveAt);
+                    document.removeEventListener('mouseup', stopDrag);
+
+                    el.style.left = el.offsetLeft + 'px';
+                    el.style.top = el.offsetTop + 'px';
+
+                    saveHistory();
+
+                }
+
+                document.addEventListener('mousemove', moveAt);
+                document.addEventListener('mouseup', stopDrag);
+            };
+
+            // TOUCH SUPPORT
+            el.ontouchstart = function (e) {
+                const touch = e.touches[0];
+                let offsetX = touch.clientX - el.getBoundingClientRect().left;
+                let offsetY = touch.clientY - el.getBoundingClientRect().top;
+                let lastTouchX = touch.clientX;
+                let lastTouchY = touch.clientY;
+
+                function moveAt(t) {
+                    const touchMove = t.touches[0];
+                    const roomRect = room.getBoundingClientRect();
+
+                    const mouseX = (touchMove.clientX - roomRect.left) / zoomLevel;
+                    const mouseY = (touchMove.clientY - roomRect.top) / zoomLevel;
+
+                    const newLeft = mouseX - offsetX / zoomLevel;
+                    const newTop = mouseY - offsetY / zoomLevel;
+
+                    const w = el.offsetWidth;
+                    const h = el.offsetHeight;
+
+                    const cx = newLeft + w / 2;
+                    const cy = newTop + h / 2;
+
+                    const finalLeft = cx - w / 2;
+                    const finalTop = cy - h / 2;
+
+                    const dx = touchMove.clientX - lastTouchX;
+                    const dy = touchMove.clientY - lastTouchY;
+
+                    let allowedLeft = el.offsetLeft;
+                    let allowedTop = el.offsetTop;
+
+                    // Try X-only
+                    const tryLeftX = cx - w / 2;
+                    let xBlocked = false;
+                    for (let otherId in furnitureMap) {
+                        const other = furnitureMap[otherId];
+                        if (other === el) continue;
+
+                        const testEl = {
+                            style: { left: tryLeftX + 'px', top: el.offsetTop + 'px' },
+                            dataset: el.dataset
+                        };
+                        if (isOverlapping(testEl, other)) {
+                            xBlocked = true;
+                            break;
+                        }
+                    }
+                    if (!xBlocked) allowedLeft = finalLeft;
+
+                    // Try Y-only
+                    const tryTopY = cy - h / 2;
+                    let yBlocked = false;
+                    for (let otherId in furnitureMap) {
+                        const other = furnitureMap[otherId];
+                        if (other === el) continue;
+
+                        const testEl = {
+                            style: { left: el.offsetLeft + 'px', top: tryTopY + 'px' },
+                            dataset: el.dataset
+                        };
+                        if (isOverlapping(testEl, other)) {
+                            yBlocked = true;
+                            break;
+                        }
+                    }
+                    if (!yBlocked) allowedTop = finalTop;
+
+                    // Clamp to room border
+                    (() => {
+                        const angle = (parseFloat(el.dataset.rotation) || 0) * Math.PI / 180;
+                        const cx = allowedLeft + w / 2;
+                        const cy = allowedTop + h / 2;
+
+                        const corners = [
+                            [-w / 2, -h / 2],
+                            [w / 2, -h / 2],
+                            [w / 2, h / 2],
+                            [-w / 2, h / 2]
+                        ].map(([x, y]) => {
+                            const rx = x * Math.cos(angle) - y * Math.sin(angle);
+                            const ry = x * Math.sin(angle) + y * Math.cos(angle);
+                            return [cx + rx, cy + ry];
+                        });
+
+                        const xs = corners.map(c => c[0]);
+                        const ys = corners.map(c => c[1]);
+
+                        const minX = Math.min(...xs);
+                        const maxX = Math.max(...xs);
+                        const minY = Math.min(...ys);
+                        const maxY = Math.max(...ys);
+
+                        const rightBuffer = 4;
+                        const bottomBuffer = 4;
+
+                        let dx = 0;
+                        let dy = 0;
+
+                        if (minX < 0) dx = -minX;
+                        if (maxX > roomWidthCm - rightBuffer) dx = (roomWidthCm - rightBuffer) - maxX;
+                        if (minY < 0) dy = -minY;
+                        if (maxY > roomHeightCm - bottomBuffer) dy = (roomHeightCm - bottomBuffer) - maxY;
+
+                        const finalCx = cx + dx;
+                        const finalCy = cy + dy;
+
+                        allowedLeft = finalCx - w / 2;
+                        allowedTop = finalCy - h / 2;
+                    })();
+
+                    el.style.left = allowedLeft + 'px';
+                    el.style.top = allowedTop + 'px';
+                    el.style.transform = `rotate(${el.dataset.rotation}deg)`;
+
+                    lastTouchX = touchMove.clientX;
+                    lastTouchY = touchMove.clientY;
+                }
+
+                function stopTouch() {
+                    document.removeEventListener('touchmove', moveAt);
+                    document.removeEventListener('touchend', stopTouch);
+                    el.style.left = el.offsetLeft + 'px';
+                    el.style.top = el.offsetTop + 'px';
+                    saveHistory();
+                }
+
+                document.addEventListener('touchmove', moveAt, { passive: false });
+                document.addEventListener('touchend', stopTouch, { passive: false });
+            };
+
+
+        }
+
+        function saveHistory() {
+            if (isRestoring) return;
+
+            // Remove future states if we just undid something
+            history = history.slice(0, historyIndex + 1);
+
+            // Capture the state
+            const state = {
+                roomWidth: roomWidthCm,
+                roomHeight: roomHeightCm,
+                items: Object.values(furnitureMap).map(el => ({
+                    id: el.dataset.id,
+                    type: el.dataset.type,
+                    name: el.dataset.name,
+                    width: parseInt(el.dataset.width),
+                    height: parseInt(el.dataset.height),
+                    color: el.style.backgroundColor,
+                    x: parseInt(el.style.left),
+                    y: parseInt(el.style.top),
+                    rotation: parseInt(el.dataset.rotation)
+
+                }))
+            };
+
+            history.push(state);
+            historyIndex++;
+        }
+
+        function loadState(state) {
+            isRestoring = true;
+
+            clearRoom();
+
+            roomWidthCm = state.roomWidth;
+            roomHeightCm = state.roomHeight;
+
+            room.style.width = roomWidthCm + 'px';
+            room.style.height = roomHeightCm + 'px';
+
+            state.items.forEach(item => {
+                const newEl = addFurniture(
+                    item.type,
+                    item.name,
+                    item.width,
+                    item.height,
+                    item.color,
+                    item.x,
+                    item.y
+                );
+                newEl.dataset.rotation = item.rotation;
+                newEl.style.transform = `rotate(${item.rotation}deg)`;
+
+
+
+            });
+
+            fitToCanvas();
+
+            isRestoring = false;
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                loadState(history[historyIndex]);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                loadState(history[historyIndex]);
+            }
+        }
+
+        function exportToHtml() {
+            // Lock in positions visually
+            Object.values(furnitureMap).forEach(el => {
+                el.style.left = el.offsetLeft + 'px';
+                el.style.top = el.offsetTop + 'px';
+            });
+
+            const state = {
+                roomWidth: roomWidthCm,
+                roomHeight: roomHeightCm,
+                items: Object.values(furnitureMap).map(el => ({
+                    id: el.dataset.id,
+                    type: el.dataset.type,
+                    name: el.dataset.name,
+                    width: parseFloat(el.style.width),
+                    height: parseFloat(el.style.height),
+                    color: el.style.backgroundColor,
+                    x: parseFloat(el.style.left),
+                    y: parseFloat(el.style.top),
+                    rotation: parseFloat(el.dataset.rotation || 0)
+                }))
+            };
+
+            // Clone current document
+            const clone = document.documentElement.cloneNode(true);
+            const script = clone.querySelector('script');
+
+            // Create a new script tag with the saved layout
+            const saved = document.createElement('script');
+            saved.textContent = `const savedLayout = ${JSON.stringify(state)};\nwindow.onload = () => { loadState(savedLayout); };`;
+
+            // Inject right after the original script
+            script.parentNode.insertBefore(saved, script.nextSibling);
+
+            // Build final HTML
+            const finalHtml = '<!DOCTYPE html>\n' + clone.outerHTML;
+
+            // Download
+            const blob = new Blob([finalHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-room-layout.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function isOverlapping(el1, el2) {
+            const shape1 = el1.dataset.shape || 'rect';
+            const shape2 = el2.dataset.shape || 'rect';
+
+            const x1 = parseFloat(el1.style.left);
+            const y1 = parseFloat(el1.style.top);
+            const w1 = parseFloat(el1.dataset.width);
+            const h1 = parseFloat(el1.dataset.height);
+
+            const x2 = parseFloat(el2.style.left);
+            const y2 = parseFloat(el2.style.top);
+            const w2 = parseFloat(el2.dataset.width);
+            const h2 = parseFloat(el2.dataset.height);
+
+            // Circle vs Circle
+            if (shape1 === 'circle' && shape2 === 'circle') {
+                const cx1 = x1 + w1 / 2;
+                const cy1 = y1 + h1 / 2;
+                const cx2 = x2 + w2 / 2;
+                const cy2 = y2 + h2 / 2;
+                const r1 = w1 / 2;
+                const r2 = w2 / 2;
+
+                const dx = cx1 - cx2;
+                const dy = cy1 - cy2;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                return distance < r1 + r2;
+            }
+
+            // Circle vs Rectangle (either way)
+            // Circle vs Rectangle (either one can be circle, other can be rotated)
+            if (shape1 === 'circle' || shape2 === 'circle') {
+                let circleEl = shape1 === 'circle' ? el1 : el2;
+                let rectEl = shape1 === 'circle' ? el2 : el1;
+
+                const cx = parseFloat(circleEl.style.left) + parseFloat(circleEl.dataset.width) / 2;
+                const cy = parseFloat(circleEl.style.top) + parseFloat(circleEl.dataset.height) / 2;
+                const r = parseFloat(circleEl.dataset.width) / 2;
+
+                const rx = parseFloat(rectEl.style.left);
+                const ry = parseFloat(rectEl.style.top);
+                const rw = parseFloat(rectEl.dataset.width);
+                const rh = parseFloat(rectEl.dataset.height);
+                const angle = (parseFloat(rectEl.dataset.rotation) || 0) * Math.PI / 180;
+
+                // Rotate circle center into rectangle's local space
+                const centerX = cx - (rx + rw / 2);
+                const centerY = cy - (ry + rh / 2);
+
+                const unrotatedX = centerX * Math.cos(-angle) - centerY * Math.sin(-angle);
+                const unrotatedY = centerX * Math.sin(-angle) + centerY * Math.cos(-angle);
+
+                // Find closest point in the axis-aligned rectangle
+                const closestX = Math.max(-rw / 2, Math.min(unrotatedX, rw / 2));
+                const closestY = Math.max(-rh / 2, Math.min(unrotatedY, rh / 2));
+
+                const dx = unrotatedX - closestX;
+                const dy = unrotatedY - closestY;
+
+                return (dx * dx + dy * dy) < r * r;
+            }
+
+
+            // Rectangle vs Rectangle (both possibly rotated)
+            const angle1 = (parseFloat(el1.dataset.rotation) || 0) * Math.PI / 180;
+            const angle2 = (parseFloat(el2.dataset.rotation) || 0) * Math.PI / 180;
+
+            const cx1 = x1 + w1 / 2;
+            const cy1 = y1 + h1 / 2;
+            const cx2 = x2 + w2 / 2;
+            const cy2 = y2 + h2 / 2;
+
+            const poly1 = getRotatedCorners(cx1, cy1, w1, h1, angle1);
+            const poly2 = getRotatedCorners(cx2, cy2, w2, h2, angle2);
+
+            return polygonsIntersect(poly1, poly2);
+        }
+
+
+        function getRotatedCorners(cx, cy, w, h, angle) {
+            return [
+                [-w / 2, -h / 2],
+                [w / 2, -h / 2],
+                [w / 2, h / 2],
+                [-w / 2, h / 2]
+            ].map(([x, y]) => {
+                const rx = x * Math.cos(angle) - y * Math.sin(angle);
+                const ry = x * Math.sin(angle) + y * Math.cos(angle);
+                return [cx + rx, cy + ry];
+            });
+        }
+
+
+        function polygonsIntersect(a, b) {
+            const polygons = [a, b];
+            for (let i = 0; i < polygons.length; i++) {
+                const polygon = polygons[i];
+                for (let i1 = 0; i1 < polygon.length; i1++) {
+                    const i2 = (i1 + 1) % polygon.length;
+                    const p1 = polygon[i1];
+                    const p2 = polygon[i2];
+
+                    const normal = [p2[1] - p1[1], p1[0] - p2[0]];
+
+                    let minA = null, maxA = null;
+                    for (const p of a) {
+                        const projected = p[0] * normal[0] + p[1] * normal[1];
+                        if (minA === null || projected < minA) minA = projected;
+                        if (maxA === null || projected > maxA) maxA = projected;
+                    }
+
+                    let minB = null, maxB = null;
+                    for (const p of b) {
+                        const projected = p[0] * normal[0] + p[1] * normal[1];
+                        if (minB === null || projected < minB) minB = projected;
+                        if (maxB === null || projected > maxB) maxB = projected;
+                    }
+
+                    if (maxA < minB || maxB < minA) return false;
+                }
+            }
+            return true;
+        }
+
+
+
+        window.onload = () => {
+            if (typeof savedLayout !== 'undefined') {
+                loadState(savedLayout);
+
+            } else {
+                resetRoom();
+                fitToCanvas();
+            }
+        }
+
+
+        document.addEventListener('click', (e) => {
+            // Check if the click target is INSIDE furniture or sidebar item
+            const isFurniture = e.target.closest('.furniture');
+            const isSidebarEntry = e.target.closest('.item-entry');
+
+            if (!isFurniture && !isSidebarEntry) {
+                // Deselect all sidebar items
+                const allEntries = itemList.querySelectorAll('.item-entry');
+                allEntries.forEach(entry => entry.classList.remove('selected'));
+
+                // Deselect all furniture
+                Object.values(furnitureMap).forEach(el => el.classList.remove('selected'));
+            }
+        });
+
+        const roomContainer = document.getElementById('roomContainer');
+
+        roomWrapper.addEventListener('mousedown', (e) => {
+            if (zoomLevel <= 1) return; // Don't pan if not zoomed
+            isPanning = true;
+            startPan.x = e.clientX;
+            startPan.y = e.clientY;
+            roomWrapper.style.cursor = 'grab';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            const dx = (e.clientX - startPan.x) / zoomLevel;
+            const dy = (e.clientY - startPan.y) / zoomLevel;
+            panX += dx;
+            panY += dy;
+            startPan.x = e.clientX;
+            startPan.y = e.clientY;
+
+        });
+
+        document.addEventListener('mouseup', () => {
+            isPanning = false;
+            roomWrapper.style.cursor = 'default';
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const selected = room.querySelector('.furniture.selected');
+            if (!selected) return;
+
+            const step = 1;
+            const originalLeft = parseFloat(selected.style.left);
+            const originalTop = parseFloat(selected.style.top);
+
+            let newLeft = originalLeft;
+            let newTop = originalTop;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    newLeft -= step;
+                    break;
+                case 'ArrowRight':
+                    newLeft += step;
+                    break;
+                case 'ArrowUp':
+                    newTop -= step;
+                    break;
+                case 'ArrowDown':
+                    newTop += step;
+                    break;
+                default:
+                    return;
+            }
+
+            // Clamp to room bounds
+            const borderBuffer = 4;
+            const maxLeft = roomWidthCm - selected.offsetWidth - borderBuffer;
+            const maxTop = roomHeightCm - selected.offsetHeight - borderBuffer;
+
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            newTop = Math.max(0, Math.min(newTop, maxTop));
+
+
+            // Prepare test element for collision
+            const testEl = {
+                style: { left: newLeft + 'px', top: newTop + 'px' },
+                dataset: selected.dataset
+            };
+
+            // Check collision with other furniture
+            for (let otherId in furnitureMap) {
+                const other = furnitureMap[otherId];
+                if (other === selected) continue;
+
+                if (isOverlapping(testEl, other)) {
+                    return; // Abort movement if collision detected
+                }
+            }
+
+            // Apply movement
+            selected.style.left = newLeft + 'px';
+            selected.style.top = newTop + 'px';
+            selected.style.transform = `rotate(${selected.dataset.rotation}deg)`;
+
+            saveHistory();
+        });
+
+        function goToOtherMode() {
+            window.location.href = 'free-ipad.html';
+        }
+
+
+        // Prevent touch scrolling inside the room
+        document.addEventListener('touchmove', function (e) {
+            if (e.target.closest('#roomWrapper')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent pinch-zoom
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('gesturechange', e => e.preventDefault());
+        document.addEventListener('gestureend', e => e.preventDefault());
+
+
+        // Disable double-tap to zoom on buttons
+        let tapTimeout;
+        let tapCount = 0;
+
+        document.addEventListener('touchend', function (event) {
+            tapCount++;
+
+            clearTimeout(tapTimeout);
+            tapTimeout = setTimeout(() => {
+                tapCount = 0;
+            }, 500); // 500ms window for detecting double-tap
+
+            if (tapCount > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
