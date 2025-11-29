@@ -1026,8 +1026,6 @@
                 const touch = e.touches[0];
                 let offsetX = touch.clientX - el.getBoundingClientRect().left;
                 let offsetY = touch.clientY - el.getBoundingClientRect().top;
-                Object.values(furnitureMap).forEach(f => f.classList.remove('selected'));
-                el.classList.add('selected');
 
                 function moveAt(t) {
                     const touchMove = t.touches[0];
